@@ -13,6 +13,7 @@ find_package(builtin_interfaces REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/RadarDetection.msg"
+  "msg/RadarScan.msg"
   "msg/TargetTrack.msg"
   DEPENDENCIES std_msgs builtin_interfaces
 )

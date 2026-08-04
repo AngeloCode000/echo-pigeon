@@ -1,0 +1,57 @@
+# Phase 1 hardware bring-up defaults for the TI IWR6843ISK-ODS.
+# Serial ports and cfg file can be overridden as launch arguments:
+#   ros2 launch radar_bringup hardware.launch.py cli_port:=/dev/ttyACM2
+
+radar_driver_node:
+  ros__parameters:
+    cli_port: /dev/ttyACM0          # XDS110 enumerates as CDC-ACM
+    data_port: /dev/ttyACM1
+    cli_baud: 115200
+    data_baud: 921600
+    cfg_file: ''                    # empty = package default ODS profile
+    frame_id: radar_link
+
+preprocessor_node:
+  ros__parameters:
+    min_snr_db: 8.0
+    min_range_m: 0.3
+    max_range_m: 15.0
+    # Zero-doppler rejection removes walls and ground — but also a
+    # perfectly stationary hovering drone. Disable for hover tests
+    # (project_plan.md Phase 2).
+    enable_static_clutter_filter: true
+    min_abs_radial_velocity_mps: 0.1
+    enable_clustering: true         # real targets return multiple points
+    cluster_eps_m: 0.5
+    cluster_min_samples: 2
+    cluster_keep_noise: true
+
+tracker_node:
+  ros__parameters:
+    sigma_accel: 3.0
+    # Rough IWR6843 short-range accuracies; refine after calibration
+    # (docs/calibration_procedure.md).
+    sigma_range_m: 0.1
+    sigma_azimuth_rad: 0.05
+    sigma_elevation_rad: 0.05
+    sigma_doppler_mps: 0.15
+    gate_chi2: 9.488
+    confirm_hits: 3
+    max_misses: 8
+    initial_velocity_sigma: 5.0
+    max_coast_dt_s: 1.0
+
+visualizer_node:
+  ros__parameters:
+    marker_lifetime_s: 0.5
+    track_sphere_scale: 0.3
+    velocity_arrow_scale: 0.5
+    show_covariance: true
+    show_detections: true
+    detection_point_scale: 0.12
+
+logger_node:
+  ros__parameters:
+    output_dir: '~/echo_pigeon_logs'
+    enable: true
+    flush_every_n: 50

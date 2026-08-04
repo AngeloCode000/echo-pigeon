@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>radar_bringup</name>
+  <version>0.0.0</version>
+  <description>Launch files, parameter defaults, and RViz configuration for the echo-pigeon pipeline</description>
+  <maintainer email="CARDILLH@protonmail.com">Cardi</maintainer>
+  <license>TODO: License declaration</license>
+
+  <exec_depend>radar_simulator</exec_depend>
+  <exec_depend>radar_preprocessor</exec_depend>
+  <exec_depend>target_tracker</exec_depend>
+  <exec_depend>track_visualizer</exec_depend>
+  <exec_depend>data_logger</exec_depend>
+  <exec_depend>ti_radar_driver</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
