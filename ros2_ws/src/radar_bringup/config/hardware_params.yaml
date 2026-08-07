@@ -49,6 +49,17 @@ tracker_node:
     imm_sigma_jerk: 6.0
     imm_p_cv_to_ca: 0.05
     imm_p_ca_to_cv: 0.10
+    # Duplicate suppression: keep one object on one ID. See sim_params.yaml.
+    spawn_gate_chi2: 30.0
+    # Deliberately tighter than sim_params.yaml's 25.0. These angle sigmas are
+    # 2.5x the simulator's, which inflates S and so shrinks the state distance
+    # between any two tracks — a noisier sensor needs a *smaller* chi-square
+    # threshold to resolve the same physical separation. Measured against two
+    # stationary targets at 8 m: 25.0 collapses a genuine 1.5 m pair onto one
+    # ID, 6.0 holds 1.5 m and 2.0 m at 100% while still cutting duplicate
+    # frames from 11.4% to 0.7%. Re-tune with merge_chi2 once real angle
+    # accuracy is known (docs/calibration_procedure.md).
+    merge_chi2: 6.0
 
 visualizer_node:
   ros__parameters:

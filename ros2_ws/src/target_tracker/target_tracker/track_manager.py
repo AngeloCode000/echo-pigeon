@@ -18,6 +18,15 @@ from target_tracker.imm import IMMFilter
 
 MOTION_MODELS = ('cv', 'imm')
 
+# How many consecutive misses a confirmed track may have and still suppress a
+# nearby spawn. The twin-spawn case this exists to stop is exactly one miss:
+# the detection that failed the association gate is the same one that would
+# otherwise start the twin, so the track is always one frame unfed at that
+# moment. A track that has genuinely slid off the target during a hard turn
+# accumulates misses fast, and past this allowance it stops suppressing so the
+# detection that would re-acquire the target is free to start a new track.
+MAX_SUPPRESSING_MISSES = 1
+
 
 class TrackState(Enum):
     TENTATIVE = 'tentative'
@@ -58,7 +67,8 @@ class TrackManager:
                  initial_velocity_sigma=5.0, max_coast_dt_s=1.0,
                  motion_model='imm', initial_accel_sigma=2.0,
                  imm_sigma_accel=2.0, imm_sigma_jerk=4.0,
-                 imm_p_cv_to_ca=0.05, imm_p_ca_to_cv=0.10):
+                 imm_p_cv_to_ca=0.05, imm_p_ca_to_cv=0.10,
+                 spawn_gate_chi2=30.0, merge_chi2=25.0):
         if motion_model not in MOTION_MODELS:
             raise ValueError(f"unknown motion model '{motion_model}' "
                              "(expected 'cv' or 'imm')")
@@ -80,6 +90,12 @@ class TrackManager:
         self.imm_sigma_jerk = imm_sigma_jerk
         self.imm_p_cv_to_ca = imm_p_cv_to_ca
         self.imm_p_ca_to_cv = imm_p_ca_to_cv
+        # Association and initiation ask different questions of the same
+        # detection — "good enough to fuse?" versus "plausibly the same
+        # object?" — and so deserve different thresholds. See
+        # _suppressed_by_confirmed_track. Either may be set to 0 to disable.
+        self.spawn_gate_chi2 = spawn_gate_chi2
+        self.merge_chi2 = merge_chi2
         self.tracks = []
         self._next_id = 1
         self._last_time = None
@@ -99,11 +115,111 @@ class TrackManager:
         unmatched = self._associate(measurements)
 
         for measurement in unmatched:
+            if self._suppressed_by_confirmed_track(measurement):
+                continue
             self._spawn_track(measurement, stamp_s)
 
         self.tracks = [t for t in self.tracks
                        if t.consecutive_misses < self.max_misses]
+        self._merge_duplicates()
         return self.tracks
+
+    def _suppressed_by_confirmed_track(self, measurement):
+        """True if this detection plausibly belongs to a confirmed track already.
+
+        gate_chi2 is the chi-square 95th percentile, so about 5% of a target's
+        own detections fail association by construction. Spawning on every one
+        of those births a duplicate track directly on top of the target that
+        just rejected it, which is the dominant source of one-object-many-IDs.
+        Answering "is this the same object?" with a looser gate than "is this
+        good enough to fuse?" removes the duplicate at the source and costs
+        nothing on straight legs.
+
+        Only confirmed tracks suppress. A clutter-born tentative track must
+        never be able to shadow a genuinely new target.
+
+        A track must also still be current, within MAX_SUPPRESSING_MISSES. A
+        long-coasting track may have slid off the target during a hard turn,
+        and if it could still suppress it would block the very detection that
+        would re-acquire the target — trading duplicate IDs for outright
+        dropouts, the worse failure of the two. This matters most for the 'cv'
+        model, which drifts hardest through turns: with no such limit its
+        sharp-turn coverage gap goes to 20% of frames.
+        """
+        if self.spawn_gate_chi2 <= 0.0:
+            return False
+        return any(
+            track.state is TrackState.CONFIRMED
+            and track.consecutive_misses <= MAX_SUPPRESSING_MISSES
+            and track.ekf.mahalanobis(measurement) <= self.spawn_gate_chi2
+            for track in self.tracks)
+
+    def _merge_duplicates(self):
+        """Collapse track pairs that have converged onto the same object.
+
+        Spawn suppression cannot catch twins born before either track
+        confirmed, because there was no confirmed track to suppress against
+        yet. This is the second line of defence.
+        """
+        if self.merge_chi2 <= 0.0:
+            return
+        dropped = set()
+        for i in range(len(self.tracks)):
+            if i in dropped:
+                continue
+            for j in range(i + 1, len(self.tracks)):
+                if j in dropped:
+                    continue
+                a, b = self.tracks[i], self.tracks[j]
+                if self._state_distance(a, b) > self.merge_chi2:
+                    continue
+                # The lower ID is the older identity — the one downstream
+                # consumers have been seeing — so it always survives.
+                keep, drop = (a, b) if a.track_id < b.track_id else (b, a)
+                self._absorb(keep, drop)
+                dropped.add(j if keep is a else i)
+                if keep is b:
+                    break
+        if dropped:
+            self.tracks = [t for k, t in enumerate(self.tracks) if k not in dropped]
+
+    def _state_distance(self, a, b):
+        """Squared Mahalanobis distance between two tracks' [p, v] estimates.
+
+        Restricted to the first six elements so one code path serves both the
+        6D CV filter and the 9D IMM, and because acceleration is the least
+        observable part of the state — including it would mostly feed noise
+        into the decision.
+        """
+        dx = a.ekf.x[:6] - b.ekf.x[:6]
+        S = a.ekf.P[:6, :6] + b.ekf.P[:6, :6]
+        try:
+            return float(dx @ np.linalg.solve(S, dx))
+        except np.linalg.LinAlgError:
+            return np.inf
+
+    def _absorb(self, keep, drop):
+        """Fold drop's evidence into keep, retaining keep's ID."""
+        # Freshness first, confidence only as a tie-break. Ranking by trace(P)
+        # alone loses the target outright during a hard turn: a track that has
+        # drifted off but been updated for seconds is far more confident than
+        # the accurate replacement just spawned on top of the real target,
+        # which still carries the 25 m^2/s^2 birth velocity covariance. The
+        # drifted estimate would win every time, the true one would be
+        # discarded, and the resulting re-spawn thrash drove coverage gaps to
+        # 25% of frames and quadrupled the IDs minted.
+        if (drop.consecutive_misses, np.trace(drop.ekf.P)) < \
+                (keep.consecutive_misses, np.trace(keep.ekf.P)):
+            keep.ekf = drop.ekf
+        # The two tracks were fed overlapping detections, so summing hits
+        # would double-count the same evidence.
+        keep.hits = max(keep.hits, drop.hits)
+        keep.misses = min(keep.misses, drop.misses)
+        keep.consecutive_misses = min(keep.consecutive_misses,
+                                      drop.consecutive_misses)
+        keep.start_time = min(keep.start_time, drop.start_time)
+        if drop.state is TrackState.CONFIRMED or keep.hits >= self.confirm_hits:
+            keep.state = TrackState.CONFIRMED
 
     def _associate(self, measurements):
         """Greedy nearest-Mahalanobis association. Returns unmatched measurements."""

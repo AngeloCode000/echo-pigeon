@@ -35,6 +35,10 @@ class TrackerNode(Node):
         self.declare_parameter('imm_sigma_jerk', 4.0)
         self.declare_parameter('imm_p_cv_to_ca', 0.05)
         self.declare_parameter('imm_p_ca_to_cv', 0.10)
+        # Duplicate suppression: keep one object on one ID. Both accept 0 to
+        # disable, restoring the pre-suppression spawn behaviour.
+        self.declare_parameter('spawn_gate_chi2', 30.0)
+        self.declare_parameter('merge_chi2', 25.0)
 
         p = self.get_parameter
         self.manager = TrackManager(
@@ -56,6 +60,8 @@ class TrackerNode(Node):
             imm_sigma_jerk=p('imm_sigma_jerk').value,
             imm_p_cv_to_ca=p('imm_p_cv_to_ca').value,
             imm_p_ca_to_cv=p('imm_p_ca_to_cv').value,
+            spawn_gate_chi2=p('spawn_gate_chi2').value,
+            merge_chi2=p('merge_chi2').value,
         )
 
         self.subscription = self.create_subscription(

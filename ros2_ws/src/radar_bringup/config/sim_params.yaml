@@ -58,6 +58,15 @@ tracker_node:
     imm_sigma_jerk: 4.0             # CA mode process noise, m/s^3
     imm_p_cv_to_ca: 0.05            # ~2 s expected straight-leg dwell at 10 Hz
     imm_p_ca_to_cv: 0.10            # ~1 s expected maneuver dwell at 10 Hz
+    # Duplicate suppression: keep one object on one ID. gate_chi2 rejects ~5%
+    # of a target's own detections by construction, and spawning on those
+    # births a twin on top of the target that just rejected it.
+    spawn_gate_chi2: 30.0           # don't initiate this close to a confirmed,
+                                    # currently-updated track. 0 disables.
+    merge_chi2: 25.0                # collapse tracks this close in [p, v].
+                                    # Two real targets 1 m apart measure ~44,
+                                    # so this resolves them; 50 would not.
+                                    # 0 disables.
 
 visualizer_node:
   ros__parameters:
