@@ -26,6 +26,9 @@ class TrackerNode(Node):
         self.declare_parameter('max_misses', 5)
         self.declare_parameter('initial_velocity_sigma', 5.0)
         self.declare_parameter('max_coast_dt_s', 1.0)
+        self.declare_parameter('coast_gate_growth', 0.15)
+        self.declare_parameter('stitch_grace_s', 2.0)
+        self.declare_parameter('merge_gate_chi2', 7.815)
 
         p = self.get_parameter
         self.manager = TrackManager(
@@ -41,6 +44,9 @@ class TrackerNode(Node):
             max_misses=p('max_misses').value,
             initial_velocity_sigma=p('initial_velocity_sigma').value,
             max_coast_dt_s=p('max_coast_dt_s').value,
+            coast_gate_growth=p('coast_gate_growth').value,
+            stitch_grace_s=p('stitch_grace_s').value,
+            merge_gate_chi2=p('merge_gate_chi2').value,
         )
 
         self.subscription = self.create_subscription(

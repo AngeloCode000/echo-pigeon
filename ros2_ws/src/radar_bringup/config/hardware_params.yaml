@@ -40,6 +40,15 @@ tracker_node:
     max_misses: 8
     initial_velocity_sigma: 5.0
     max_coast_dt_s: 1.0
+    # Coast-gate widening and track stitching are validated against the
+    # sim's uniform-random clutter model only; keep them off on real
+    # hardware until characterized (docs/calibration_procedure.md).
+    coast_gate_growth: 0.0
+    stitch_grace_s: 0.0
+    # Merging only collapses tracks already statistically on top of each
+    # other, so unlike the two params above it isn't clutter-model
+    # dependent — safe to enable with the same default here.
+    merge_gate_chi2: 7.815
 
 visualizer_node:
   ros__parameters:

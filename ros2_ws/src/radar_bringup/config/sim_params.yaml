@@ -47,6 +47,17 @@ tracker_node:
     max_misses: 8
     initial_velocity_sigma: 5.0
     max_coast_dt_s: 1.0
+    # Widens the association gate proportionally to consecutive misses
+    # (never applied to a just-hit track) so a maneuvering target isn't
+    # lost purely from constant-velocity prediction error through a turn.
+    coast_gate_growth: 0.15
+    # How long a dead (previously confirmed) track's last state is kept
+    # to be re-matched under its original id instead of spawning a new
+    # one, once it exceeds max_misses.
+    stitch_grace_s: 2.0
+    # Position-only (3 DOF) gate below which two CONFIRMED tracks are
+    # treated as duplicates of the same object and collapsed into one.
+    merge_gate_chi2: 7.815
 
 visualizer_node:
   ros__parameters:
