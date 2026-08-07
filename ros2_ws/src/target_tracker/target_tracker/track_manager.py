@@ -14,6 +14,9 @@ from target_tracker.coordinates import (
     spherical_to_cartesian,
 )
 from target_tracker.ekf import ConstantVelocityEKF
+from target_tracker.imm import IMMFilter
+
+MOTION_MODELS = ('cv', 'imm')
 
 
 class TrackState(Enum):
@@ -52,7 +55,13 @@ class TrackManager:
     def __init__(self, sigma_accel=2.0,
                  measurement_noise_diag=(0.1, 0.02, 0.02, 0.1),
                  gate_chi2=9.488, confirm_hits=3, max_misses=5,
-                 initial_velocity_sigma=5.0, max_coast_dt_s=1.0):
+                 initial_velocity_sigma=5.0, max_coast_dt_s=1.0,
+                 motion_model='imm', initial_accel_sigma=2.0,
+                 imm_sigma_accel=2.0, imm_sigma_jerk=4.0,
+                 imm_p_cv_to_ca=0.05, imm_p_ca_to_cv=0.10):
+        if motion_model not in MOTION_MODELS:
+            raise ValueError(f"unknown motion model '{motion_model}' "
+                             "(expected 'cv' or 'imm')")
         self.sigma_accel = sigma_accel
         self.measurement_noise_diag = np.asarray(measurement_noise_diag, dtype=float)
         self.gate_chi2 = gate_chi2
@@ -60,6 +69,17 @@ class TrackManager:
         self.max_misses = max_misses
         self.initial_velocity_sigma = initial_velocity_sigma
         self.max_coast_dt_s = max_coast_dt_s
+        self.motion_model = motion_model
+        self.initial_accel_sigma = initial_accel_sigma
+        # The IMM's CV mode gets its own process noise rather than reusing
+        # sigma_accel: the YAMLs inflate sigma_accel to 3.0 to let a single CV
+        # filter survive maneuvers, and feeding that to the IMM's CV mode would
+        # blur it into a second CA mode and destroy the mode discrimination the
+        # whole filter depends on.
+        self.imm_sigma_accel = imm_sigma_accel
+        self.imm_sigma_jerk = imm_sigma_jerk
+        self.imm_p_cv_to_ca = imm_p_cv_to_ca
+        self.imm_p_ca_to_cv = imm_p_ca_to_cv
         self.tracks = []
         self._next_id = 1
         self._last_time = None
@@ -123,18 +143,36 @@ class TrackManager:
         los = position / max(np.linalg.norm(position), 1e-9)
         velocity = v_radial * los
 
-        covariance = np.zeros((6, 6))
-        covariance[:3, :3] = spherical_covariance_to_cartesian(
+        position_covariance = spherical_covariance_to_cartesian(
             range_m, azimuth, elevation,
             self.measurement_noise_diag[0],
             self.measurement_noise_diag[1],
             self.measurement_noise_diag[2])
-        covariance[3:, 3:] = self.initial_velocity_sigma ** 2 * np.eye(3)
 
-        ekf = ConstantVelocityEKF(
-            initial_state=np.concatenate([position, velocity]),
-            initial_covariance=covariance,
-            sigma_accel=self.sigma_accel,
-            measurement_noise_diag=self.measurement_noise_diag)
+        if self.motion_model == 'cv':
+            covariance = np.zeros((6, 6))
+            covariance[:3, :3] = position_covariance
+            covariance[3:, 3:] = self.initial_velocity_sigma ** 2 * np.eye(3)
+            ekf = ConstantVelocityEKF(
+                initial_state=np.concatenate([position, velocity]),
+                initial_covariance=covariance,
+                sigma_accel=self.sigma_accel,
+                measurement_noise_diag=self.measurement_noise_diag)
+        else:
+            # Acceleration is wholly unobserved at birth, so seed it at zero
+            # with a deliberately loose covariance and let the bank learn it.
+            covariance = np.zeros((9, 9))
+            covariance[:3, :3] = position_covariance
+            covariance[3:6, 3:6] = self.initial_velocity_sigma ** 2 * np.eye(3)
+            covariance[6:, 6:] = self.initial_accel_sigma ** 2 * np.eye(3)
+            ekf = IMMFilter(
+                initial_state=np.concatenate([position, velocity, np.zeros(3)]),
+                initial_covariance=covariance,
+                measurement_noise_diag=self.measurement_noise_diag,
+                sigma_accel=self.imm_sigma_accel,
+                sigma_jerk=self.imm_sigma_jerk,
+                p_cv_to_ca=self.imm_p_cv_to_ca,
+                p_ca_to_cv=self.imm_p_ca_to_cv)
+
         self.tracks.append(Track(self._next_id, ekf, stamp_s))
         self._next_id += 1

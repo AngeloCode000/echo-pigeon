@@ -14,7 +14,9 @@ python3 -m pytest src/*/test/test_*.py -q --ignore-glob='*copyright*' \
 |---|---|
 | `target_tracker/test_coordinates.py` | Spherical↔Cartesian round-trip (randomized), angle wrapping, analytic vs. numerical Jacobians, covariance conversion positive-definiteness |
 | `target_tracker/test_ekf.py` | Convergence on a noisy constant-velocity target (position error < 0.2 m in the 3–10 m envelope), figure-eight maneuver following (< 0.5 m mean), covariance symmetry/shrinkage, Mahalanobis gate separation |
-| `target_tracker/test_track_manager.py` | Confirmation after N hits, deletion after M consecutive misses, survival through brief dropouts, gate rejection of far detections, clutter not stealing a confirmed track, two-target independence |
+| `target_tracker/test_track_manager.py` | Confirmation after N hits, deletion after M consecutive misses, survival through brief dropouts, gate rejection of far detections, clutter not stealing a confirmed track, two-target independence — every lifecycle test runs under **both** `motion_model: cv` and `imm`. Plus motion-model selection/validation and figure-eight fragmentation vs. the CV baseline |
+| `target_tracker/test_motion_models.py` | Constant-acceleration kinematics (exact quadratic propagation, transition semigroup), constant-velocity acceleration pinning, process-noise symmetry/rank, per-mode log-likelihood |
+| `target_tracker/test_imm.py` | 9D measurement Jacobian vs. numerical difference, mode probabilities tracking maneuver severity, accuracy vs. the CV filter on shared measurement streams, covariance symmetry/positive-definiteness through mixing and merging, mode-probability normalization, outlier and coasting behavior, gate separation |
 | `radar_simulator/test_trajectories.py` | Circle/figure-eight geometry, analytic velocity = numerical derivative |
 | `radar_simulator/test_measurement_model.py` | Noise statistics, detection-drop rate, Poisson clutter, SNR-vs-range model, seed reproducibility |
 | `radar_preprocessor/test_filters.py`, `test_clustering.py` | Threshold filters, DBSCAN labeling, SNR-weighted centroid reduction, noise-point handling |

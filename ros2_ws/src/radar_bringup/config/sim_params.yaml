@@ -37,7 +37,10 @@ preprocessor_node:
 
 tracker_node:
   ros__parameters:
-    sigma_accel: 3.0                # figure-eight maneuvers need headroom
+    motion_model: imm               # 'cv' = single constant-velocity EKF,
+                                    # 'imm' = constant-velocity + constant-
+                                    # acceleration bank (handles maneuvers)
+    sigma_accel: 3.0                # 'cv' model only; ignored by 'imm'
     sigma_range_m: 0.1
     sigma_azimuth_rad: 0.02
     sigma_elevation_rad: 0.02
@@ -47,6 +50,14 @@ tracker_node:
     max_misses: 8
     initial_velocity_sigma: 5.0
     max_coast_dt_s: 1.0
+    # IMM tuning. The CV mode deliberately does NOT reuse sigma_accel: that
+    # value is inflated so a lone CV filter can survive turns, which would
+    # blur the CV mode into a second CA mode and defeat the model bank.
+    initial_accel_sigma: 2.0        # birth uncertainty on acceleration, m/s^2
+    imm_sigma_accel: 2.0            # CV mode process noise, m/s^2
+    imm_sigma_jerk: 4.0             # CA mode process noise, m/s^3
+    imm_p_cv_to_ca: 0.05            # ~2 s expected straight-leg dwell at 10 Hz
+    imm_p_ca_to_cv: 0.10            # ~1 s expected maneuver dwell at 10 Hz
 
 visualizer_node:
   ros__parameters:

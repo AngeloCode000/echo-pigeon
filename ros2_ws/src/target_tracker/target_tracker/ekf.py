@@ -16,9 +16,14 @@ MEAS_DIM = 4
 
 
 def measurement_function(state):
-    """h(x): predicted [r, az, el, v_r] for a 6D state."""
+    """h(x): predicted [r, az, el, v_r].
+
+    Works for any state whose first six elements are [position, velocity];
+    trailing elements (e.g. the acceleration block of a 9D motion model)
+    do not affect the measurement.
+    """
     p = state[:3]
-    v = state[3:]
+    v = state[3:6]
     r = np.linalg.norm(p)
     return np.array([
         r,
@@ -29,15 +34,20 @@ def measurement_function(state):
 
 
 def measurement_jacobian(state):
-    """H = dh/dx, the 4x6 Jacobian of the measurement function."""
+    """H = dh/dx, the 4xN Jacobian of the measurement function.
+
+    N is the length of the state. Columns beyond the first six are zero:
+    range, azimuth, elevation and radial velocity depend only on position
+    and velocity, never on acceleration.
+    """
     p = state[:3]
-    v = state[3:]
+    v = state[3:6]
     r = np.linalg.norm(p)
-    H = np.zeros((MEAS_DIM, STATE_DIM))
+    H = np.zeros((MEAS_DIM, len(state)))
     H[:3, :3] = spherical_jacobian(p)
     # d(v_r)/dp = (v r^2 - p (p . v)) / r^3 ; d(v_r)/dv = p / r
     H[3, :3] = (v * r * r - p * np.dot(p, v)) / r ** 3
-    H[3, 3:] = p / r
+    H[3, 3:6] = p / r
     return H
 
 

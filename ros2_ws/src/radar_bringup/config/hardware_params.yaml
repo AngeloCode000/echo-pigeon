@@ -28,7 +28,8 @@ preprocessor_node:
 
 tracker_node:
   ros__parameters:
-    sigma_accel: 3.0
+    motion_model: imm               # 'cv' or 'imm'; see sim_params.yaml
+    sigma_accel: 3.0                # 'cv' model only; ignored by 'imm'
     # Rough IWR6843 short-range accuracies; refine after calibration
     # (docs/calibration_procedure.md).
     sigma_range_m: 0.1
@@ -40,6 +41,14 @@ tracker_node:
     max_misses: 8
     initial_velocity_sigma: 5.0
     max_coast_dt_s: 1.0
+    # IMM tuning. A real drone jerks harder than the simulator's smooth
+    # lemniscate, so the CA mode gets more headroom than in sim_params.yaml.
+    # Re-tune against recorded bags (docs/test_plan.md, Phase 3).
+    initial_accel_sigma: 3.0
+    imm_sigma_accel: 2.0
+    imm_sigma_jerk: 6.0
+    imm_p_cv_to_ca: 0.05
+    imm_p_ca_to_cv: 0.10
 
 visualizer_node:
   ros__parameters:
