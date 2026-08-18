@@ -67,7 +67,7 @@ The TI demo firmware reports points as x-right / y-boresight / z-up; the driver 
 |---|---|---|
 | `radar_interfaces` | Message definitions | `RadarDetection`, `RadarScan`, `TargetTrack` |
 | `radar_simulator` | Phase 0 synthetic target | `trajectories.py` (circle, Gerono figure-eight, analytic velocity), `measurement_model.py` (noise, drops, Poisson clutter, SNR model) |
-| `ti_radar_driver` | Phase 1 serial driver | `tlv_parser.py` (streaming mmWave SDK 3.x TLV parser), `cfg_loader.py` (CLI-UART config), `config/iwr6843_ods_default.cfg` |
+| `ti_radar_driver` | Phase 1 serial driver | `tlv_parser.py` (streaming mmWave SDK 3.x TLV parser), `cfg_loader.py` (CLI-UART config), `config/awr6843isk_default.cfg` |
 | `radar_preprocessor` | Detection filtering | `filters.py` (SNR / range / zero-doppler), `clustering.py` (numpy DBSCAN + centroid reduction) |
 | `target_tracker` | State estimation | `coordinates.py` (spherical↔Cartesian + Jacobians), `ekf.py` (constant-velocity EKF, Joseph-form updates), `track_manager.py` (Mahalanobis gating, confirm/delete lifecycle) |
 | `track_visualizer` | RViz markers | color-coded confirmed/tentative, velocity arrows, 2σ covariance ellipsoids |

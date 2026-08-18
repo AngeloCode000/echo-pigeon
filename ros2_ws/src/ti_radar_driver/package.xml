@@ -3,7 +3,7 @@
 <package format="3">
   <name>ti_radar_driver</name>
   <version>0.0.0</version>
-  <description>Serial/USB driver for the TI IWR6843ISK-ODS mmWave radar</description>
+  <description>Serial/USB driver for the TI AWR6843ISK mmWave radar</description>
   <maintainer email="CARDILLH@protonmail.com">Cardi</maintainer>
   <license>TODO: License declaration</license>
 

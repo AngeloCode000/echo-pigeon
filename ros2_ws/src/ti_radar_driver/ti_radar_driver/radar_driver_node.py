@@ -12,7 +12,7 @@ from ti_radar_driver.tlv_parser import TlvParser
 
 
 class RadarDriverNode(Node):
-    """Serial driver for the TI IWR6843ISK-ODS running the out-of-box demo.
+    """Serial driver for the TI AWR6843ISK running the out-of-box demo.
 
     Sends the chirp configuration over the CLI UART, then parses the
     point-cloud TLV stream from the data UART and publishes RadarScan
@@ -46,7 +46,7 @@ class RadarDriverNode(Node):
         if path:
             return path
         share = get_package_share_directory('ti_radar_driver')
-        return f'{share}/config/iwr6843_ods_default.cfg'
+        return f'{share}/config/awr6843isk_default.cfg'
 
     def _run(self):
         while not self._stop.is_set():

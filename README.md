@@ -1,6 +1,6 @@
 # echo-pigeon
 
-A ground-based radar station for detecting and tracking small drones. Uses 60 GHz FMCW radar (TI IWR6843ISK-ODS) to estimate range, azimuth, elevation, and velocity, then fuses detections into persistent tracks with an extended Kalman filter. Built in ROS 2 Humble with RViz visualization; radar-camera fusion planned for a later phase.
+A ground-based radar station for detecting and tracking small drones. Uses 60 GHz FMCW radar (TI AWR6843ISK) to estimate range, azimuth, elevation, and velocity, then fuses detections into persistent tracks with an extended Kalman filter. Built in ROS 2 Humble with RViz visualization; radar-camera fusion planned for a later phase.
 
 ## Quick start
 
@@ -15,7 +15,7 @@ source install/setup.bash
 # Phase 0 — simulated drone, no hardware needed:
 ros2 launch radar_bringup sim.launch.py
 
-# Phase 1 — with a TI IWR6843ISK-ODS connected:
+# Phase 1 — with a TI AWR6843ISK connected:
 ros2 launch radar_bringup hardware.launch.py
 ```
 
@@ -24,7 +24,7 @@ Full instructions — including WSL2 USB passthrough, radar flashing, and troubl
 ## Status
 
 - **Phase 0 (simulation) — complete.** A simulated drone flying a figure-eight with measurement noise, dropped detections, and clutter is tracked end-to-end and displayed in RViz from one launch command.
-- **Phase 1 (radar bring-up) — software ready.** The TI serial driver, TLV parser, and a known-good ODS chirp configuration are implemented and unit-tested against synthetic byte streams; awaiting hardware.
+- **Phase 1 (radar bring-up) — software ready.** The TI serial driver, TLV parser, and an ISK chirp configuration are implemented and unit-tested against synthetic byte streams; awaiting hardware validation.
 
 ## Documentation
 

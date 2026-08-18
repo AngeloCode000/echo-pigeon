@@ -1,6 +1,6 @@
 # Setup Guide
 
-Clone-to-running instructions for the echo-pigeon radar tracking pipeline, covering native Ubuntu 22.04 and Windows 11 + WSL2. The simulation pipeline (Phase 0) needs no hardware at all; the hardware sections apply once a TI IWR6843ISK-ODS board is on hand.
+Clone-to-running instructions for the echo-pigeon radar tracking pipeline, covering native Ubuntu 22.04 and Windows 11 + WSL2. The simulation pipeline (Phase 0) needs no hardware at all; the hardware sections apply once a TI AWR6843ISK board is on hand.
 
 ## 1. Prerequisites
 
@@ -11,7 +11,7 @@ Clone-to-running instructions for the echo-pigeon radar tracking pipeline, cover
 | Python | 3.10 | Ships with Ubuntu 22.04 |
 | numpy | **1.x** (apt: 1.21) | See the numpy warning below |
 | pyserial | 3.5 | Hardware phase only |
-| Hardware | TI IWR6843ISK-ODS | Phase 1+ only — the **-ODS** variant, not the standard ISK |
+| Hardware | TI AWR6843ISK | Phase 1+ only — standard ISK antenna (not the -ODS variant) |
 
 > **numpy warning:** install numpy from apt (`python3-numpy`), not pip. ROS 2 Humble's binary packages are built against numpy 1.x; a pip-installed numpy 2.x will break message serialization with cryptic `_ARRAY_API` import errors. If you must use pip, pin `numpy<2`.
 
@@ -150,14 +150,14 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="0451", ATTRS{idProduct}=="bef3", SYMLINK+="t
 
 ## 6. Flashing the radar (one-time, when hardware arrives)
 
-1. Install [TI UniFlash](https://www.ti.com/tool/UNIFLASH) and download the **mmWave SDK 3.x out-of-box demo** binary for the IWR6843 (`xwr68xx_mmw_demo.bin`), which ships with the [mmWave SDK](https://www.ti.com/tool/MMWAVE-SDK).
-2. Set the SOP jumpers to **flashing mode** (SOP0=1, SOP1=0, SOP2=1 on the ISK-ODS — check the silkscreen), connect USB, press reset.
+1. Install [TI UniFlash](https://www.ti.com/tool/UNIFLASH) and download the **mmWave SDK 3.x out-of-box demo** binary for the xWR6843 family (`xwr68xx_mmw_demo.bin`), which ships with the [mmWave SDK](https://www.ti.com/tool/MMWAVE-SDK). The same binary serves the AWR6843 and IWR6843 — they share the xWR6843 silicon.
+2. Set the SOP jumpers to **flashing mode** (SOP0=1, SOP1=0, SOP2=1 on the ISK — check the silkscreen), connect USB, press reset.
 3. In UniFlash pick the XDS110 COM port (the *application/user* port), load `xwr68xx_mmw_demo.bin`, and flash.
 4. Set SOP back to **functional mode** (SOP0=1, SOP1=0, SOP2=0), press reset.
 
 Do this from Windows if you're on WSL2, then attach the device with usbipd.
 
-> **Antenna variant matters:** the shipped chirp config is for the **ODS** antenna layout. The demo binary is the same for ISK and ISK-ODS, but a non-ODS config on an ODS board produces garbage angles.
+> **Antenna variant matters:** the shipped chirp config is for the **standard ISK** antenna layout (~±60° azimuth, ~±20° elevation). The demo binary is the same for ISK and ISK-ODS, but the config's FOV limits and phase compensation are antenna-specific — an ODS board would need a different config. Because the ISK's elevation fan is narrow, mount the radar tilted upward so airborne targets stay inside the beam; anything above ~20° elevation from boresight is in the blind cone.
 
 ## 7. Hardware launch (Phase 1)
 
@@ -169,7 +169,7 @@ ros2 launch radar_bringup hardware.launch.py \
     cfg_file:=/absolute/path/to/custom.cfg
 ```
 
-The driver sends `config/iwr6843_ods_default.cfg` (10 fps, ~9 m max range, SNR side-info enabled) over the CLI UART, starts the sensor, and streams parsed detections into the same pipeline the simulator used. A reference copy of the config lives at the repo root under `config/`; the copy that is actually loaded is installed with the `ti_radar_driver` package.
+The driver sends `config/awr6843isk_default.cfg` (10 fps, ~9 m max range, SNR side-info enabled) over the CLI UART, starts the sensor, and streams parsed detections into the same pipeline the simulator used. A reference copy of the config lives at the repo root under `config/`; the copy that is actually loaded is installed with the `ti_radar_driver` package.
 
 First-contact checklist (per `docs/test_plan.md` — do these in order, not with a drone first):
 

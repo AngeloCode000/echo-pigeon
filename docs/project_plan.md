@@ -39,16 +39,16 @@ ROS 2 topics carry the continuous sensor streams: radar detections, camera frame
 
 ## Hardware
 
-### Radar — TI IWR6843ISK-ODS (~$183.75)
+### Radar — TI AWR6843ISK (~$135)
 | Spec | Value |
 |---|---|
 | Frequency | 60–64 GHz FMCW |
 | Channels | 3 TX / 4 RX |
-| Azimuth FOV | 120° |
-| Elevation FOV | 120° |
+| Azimuth FOV | 120° (±60°) |
+| Elevation FOV | ~40° (±20°) |
 | Power / output | USB, point-cloud |
 
-Use the **-ODS** variant, not the standard IWR6843ISK. The standard board has longer range but only ~30° elevation FOV — too narrow for a reliably airborne target during initial testing.
+The board on hand is the **AWR6843ISK** — the automotive-qualified twin of the IWR6843, same silicon and band, with the standard ISK antenna. The plan originally called for the -ODS variant's 120°×120° FOV; the ISK trades that for longer range but only ~±20° elevation coverage, leaving a **blind cone above the board**. Mitigate by tilting the radar upward on the tripod mount so the drone flight volume sits inside the beam, and keep test flights within the elevation fan.
 
 ### Compute
 Use the desktop for all processing through the radar-only phase. Skip the Jetson for now — an Orin Nano only becomes necessary once real-time computer vision is added in Phase 4 (~$249–$399, check current pricing).
@@ -65,7 +65,7 @@ Do not fly it initially. Mount the powered-off drone on a pole, cart, or suspend
 ### Budget
 | Item | Cost |
 |---|---:|
-| TI IWR6843ISK-ODS | $183.75 |
+| TI AWR6843ISK | ~$135 |
 | Tripod or rigid sensor mount | $25–$60 |
 | USB cable and power accessories | $10–$25 |
 | Weather-resistant enclosure (later) | $25–$60 |
@@ -236,4 +236,4 @@ Complete this before ordering the radar.
 - Comply with Remote ID requirements unless operating under a recognized identification area or other applicable exception.
 
 ## Next Deliverable
-**v0.1 — simulated 3D radar tracking in ROS 2.** Purchase the IWR6843ISK-ODS only after this is functioning.
+**v0.1 — simulated 3D radar tracking in ROS 2.** Bring up the AWR6843ISK hardware only after this is functioning.

@@ -1,4 +1,4 @@
-"""Phase 1 hardware pipeline: TI IWR6843ISK-ODS -> tracker -> RViz.
+"""Phase 1 hardware pipeline: TI AWR6843ISK -> tracker -> RViz.
 
     ros2 launch radar_bringup hardware.launch.py
     ros2 launch radar_bringup hardware.launch.py cli_port:=/dev/ttyACM2 \
