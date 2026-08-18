@@ -1,4 +1,4 @@
-# Phase 1 hardware bring-up defaults for the TI IWR6843ISK-ODS.
+# Phase 1 hardware bring-up defaults for the TI AWR6843ISK.
 # Serial ports and cfg file can be overridden as launch arguments:
 #   ros2 launch radar_bringup hardware.launch.py cli_port:=/dev/ttyACM2
 
@@ -8,7 +8,7 @@ radar_driver_node:
     data_port: /dev/ttyACM1
     cli_baud: 115200
     data_baud: 921600
-    cfg_file: ''                    # empty = package default ODS profile
+    cfg_file: ''                    # empty = package default ISK profile
     frame_id: radar_link
 
 preprocessor_node:
@@ -29,11 +29,13 @@ preprocessor_node:
 tracker_node:
   ros__parameters:
     sigma_accel: 3.0
-    # Rough IWR6843 short-range accuracies; refine after calibration
-    # (docs/calibration_procedure.md).
+    # Rough AWR6843ISK short-range accuracies; refine after calibration
+    # (docs/calibration_procedure.md). The ISK antenna has a single
+    # elevation antenna pair, so elevation is markedly coarser than
+    # azimuth — the sigmas are not symmetric.
     sigma_range_m: 0.1
     sigma_azimuth_rad: 0.05
-    sigma_elevation_rad: 0.05
+    sigma_elevation_rad: 0.1
     sigma_doppler_mps: 0.15
     gate_chi2: 9.488
     confirm_hits: 3

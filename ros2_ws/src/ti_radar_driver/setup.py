@@ -11,13 +11,13 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/config',
-            ['config/iwr6843_ods_default.cfg']),
+            ['config/awr6843isk_default.cfg']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='Cardi',
     maintainer_email='CARDILLH@protonmail.com',
-    description='Serial/USB driver for the TI IWR6843ISK-ODS mmWave radar',
+    description='Serial/USB driver for the TI AWR6843ISK mmWave radar',
     license='TODO: License declaration',
     extras_require={
         'test': [
